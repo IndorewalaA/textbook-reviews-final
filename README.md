@@ -1,3 +1,7 @@
+We are using Supabase and SQL as the database. The schema is already set up. Let me know if you would like access.
+
+
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
