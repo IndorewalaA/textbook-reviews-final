@@ -13,16 +13,37 @@ export default function Register() {
     async function handleRegister(e: React.FormEvent) {
         e.preventDefault();
         setError('');
-        const { error } = await supabase.auth.signUp({
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
             email,
             password,
         });
-        if (error) {
-            setError(error.message);
-        } else {
-            // Redirect to the home page after successful login
-            router.push('/');
+        if (signUpError) {
+            setError(signUpError.message);
+            return;
+        } 
+        let userId = authData?.user?.id;
+        if (!userId) {
+            const {
+                data: { session }
+            } = await supabase.auth.getSession();
+            userId = session?.user?.id;
+            setError('User not logged in yet.');
         }
+        if (!userId) {
+            setError('User was not properly created.');
+            return;
+        }
+        const { error: insertError } = await supabase.from('users').insert({
+            id: userId,
+            role_id: '6231d214-81e8-4429-8b43-a4430b58851c', // student role
+            display_name: email.split('@')[0],
+        });
+        if (insertError) {
+            setError(insertError.message);
+            return;
+        }
+        router.push('/');
+        
     }
     return (
         <div className='min-h-screen flex items-center justify-center bg-gray-100 px-4'>
