@@ -18,7 +18,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800">
+    <div className="min-h-screen bg-gray-100 text-gray-800">
       {/* Hero Section */}
       <div className="bg-blue-700 text-white py-20 px-4 text-center">
         <h1 className="text-5xl font-extrabold mb-3">RateYourTextbooks</h1>
