@@ -23,7 +23,7 @@ export default function Login() {
             setError(error.message);
         } else {
             // Redirect to the home page after successful login
-            router.push('/');
+            window.location.href = '/';
         }
     }
     return (
@@ -34,7 +34,7 @@ export default function Login() {
             >
                 <h1 className="text-2xl font-bold text-center text-blue-500">Login</h1>
                 <input
-                    className='w-full p-2 border border-gray-300 rounded'
+                    className='w-full p-2 border border-gray-300 text-black rounded'
                     type='email'
                     placeholder='Email...'
                     value={email}
@@ -42,7 +42,7 @@ export default function Login() {
                     required
                 />
                 <input
-                    className='w-full p-2 border border-gray-300 rounded'
+                    className='w-full p-2 border text-black border-gray-300 rounded'
                     type='password'
                     placeholder='Password...'
                     value={password}
@@ -52,7 +52,7 @@ export default function Login() {
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 <button
                     type='submit'
-                    className='w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors'
+                    className='w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors cursor-pointer'
                 >
                     Login
                 </button>
