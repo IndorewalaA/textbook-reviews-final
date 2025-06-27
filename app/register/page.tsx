@@ -30,7 +30,7 @@ export default function Register() {
             >
                 <h1 className="text-2xl font-bold text-center text-blue-500">Register</h1>
                 <input
-                    className='w-full p-2 border text-black border-gray-300 rounded'
+                    className='w-full p-2 border text-black border-gray-400 rounded'
                     type='email'
                     placeholder='Email...'
                     value={email}
@@ -38,7 +38,7 @@ export default function Register() {
                     required
                 />
                 <input
-                    className='w-full p-2 border text-black border-gray-300 rounded'
+                    className='w-full p-2 border text-black border-gray-400 rounded'
                     type='password'
                     placeholder='Password...'
                     value={password}

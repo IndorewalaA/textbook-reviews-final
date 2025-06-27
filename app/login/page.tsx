@@ -34,7 +34,7 @@ export default function Login() {
             >
                 <h1 className="text-2xl font-bold text-center text-blue-500">Login</h1>
                 <input
-                    className='w-full p-2 border border-gray-300 text-black rounded'
+                    className='w-full p-2 border border-gray-400 text-black rounded'
                     type='email'
                     placeholder='Email...'
                     value={email}
@@ -42,7 +42,7 @@ export default function Login() {
                     required
                 />
                 <input
-                    className='w-full p-2 border text-black border-gray-300 rounded'
+                    className='w-full p-2 border text-black border-gray-400 rounded'
                     type='password'
                     placeholder='Password...'
                     value={password}
