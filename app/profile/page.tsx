@@ -1,12 +1,12 @@
   'use client';
 
-  import { useRef, useState } from 'react'
+  import { useRef, useState, useEffect } from 'react'
 
   export default function Profile() {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [previewURL, setPreviewURL] = useState<string | null>(null);
+    const [currentURL, setCurrentURL] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
-    
+
     const handleButtonClick = () => {
       fileInputRef.current?.click();
     }
@@ -14,7 +14,7 @@
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if(file) {
-        setPreviewURL(URL.createObjectURL(file));
+        setCurrentURL(URL.createObjectURL(file));
         uploadImage(file);
         console.log('Selected file:', file);
       }
@@ -34,6 +34,12 @@
           throw new Error('Upload failed!');
         }
         const { url } = await res.json();
+        const cacheBustedUrl = `${url}?t=${Date.now()}`;
+        const img = new Image();
+        img.src = cacheBustedUrl;
+        img.onload = () => {
+          setCurrentURL(cacheBustedUrl);
+        };
       } catch (err) {
         console.error(err)
       } finally {
@@ -41,8 +47,24 @@
       }
     }
 
+    useEffect(() => {
+      const fetchProfilePicture = async () => {
+        try {
+          const res = await fetch('/api/user');
+          if (!res.ok) throw new Error('Failed to fetch pfp.');
+          const { url } = await res.json();
+          const cacheBustedUrl = `${url}?t=${Date.now()}`;
+          setCurrentURL(cacheBustedUrl);
+        } catch(err) {
+          console.error('Failed to fetch pfp.', err);
+        }
+      };
+
+      fetchProfilePicture();
+    }, []);
+
     return (
-      <div className="flex flex-col min-h-[calc(100vh-56px)] bg-gray-100 p-6 bg-gray-100 p-6">
+      <div className="flex flex-col min-h-[calc(100vh-56px)] bg-gray-100 p-6">
         {/* Profile Container */}
         <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-2xl p-8">
           {/* Page Title */}
@@ -52,9 +74,9 @@
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Profile Picture Section */}
             <div className="flex flex-col items-center">
-              {previewURL ? (
+              {currentURL ? (
                 <img
-                  src={previewURL}
+                  src = { (currentURL) ?? undefined}
                   alt="Profile Picture Preview"
                   className="w-32 h-32 rounded-full bg-gray-300 mb-4"
                 />
