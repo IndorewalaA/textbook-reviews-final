@@ -24,7 +24,7 @@ export default async function Navbar(){
                     <Link href="/profile" className="text-gray-700 hover:text-blue-600">
                         Profile
                     </Link>
-                    <form action="/api/logout" method="post" className="inline">
+                    <form action="/api/auth/logout" method="post" className="inline">
                         <button
                             type="submit"
                             className="text-gray-700 hover:text-blue-600 cursor-pointer"
