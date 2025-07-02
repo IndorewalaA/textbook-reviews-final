@@ -100,6 +100,18 @@ export default function Profile() {
     }
   }, [statusMessage]);
 
+  const handleDelete = async () => {
+    try {
+      const res = await fetch('/api/user', {
+        method: 'DELETE',
+      });
+      window.location.href = '/';
+    } 
+    catch (err) {
+      console.error(err);
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-[calc(100vh-56px)] bg-gray-100 p-6">
       <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-2xl p-8">
@@ -108,11 +120,10 @@ export default function Profile() {
         {/* Inline status message */}
         {statusMessage && (
           <div
-            className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium ${
-              statusMessage.type === 'error'
+            className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium ${statusMessage.type === 'error'
                 ? 'bg-red-100 text-red-700 border border-red-300'
                 : 'bg-green-100 text-green-700 border border-green-300'
-            }`}
+              }`}
           >
             {statusMessage.text}
           </div>
@@ -197,7 +208,11 @@ export default function Profile() {
           <p className="text-sm text-gray-600 mb-4">
             Deleting your account is permanent and cannot be undone.
           </p>
-          <button className="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 shadow-md">
+          <button
+            type="button"
+            className="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 shadow-md"
+            onClick={handleDelete}
+          >
             Delete Account
           </button>
         </div>
