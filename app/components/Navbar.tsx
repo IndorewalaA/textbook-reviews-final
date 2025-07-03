@@ -10,6 +10,9 @@ export default async function Navbar(){
             RateYourTextbooks
         </Link>
         <div className="space-x-4">
+            <Link href="/courses" className="text-gray-700 hover:text-blue-600">
+                Courses
+            </Link>
             {!user ? (
                 <>
                     <Link href="/login" className="text-gray-700 hover:text-blue-600">
