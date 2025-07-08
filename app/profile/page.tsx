@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 
-export default function Profile() {
+export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [currentURL, setCurrentURL] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);

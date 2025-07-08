@@ -1,5 +1,5 @@
 // app/not-found.tsx
-export default function NotFound() {
+export default function NotFoundPage() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 flex items-center justify-center px-4">
       <div className="text-center">
