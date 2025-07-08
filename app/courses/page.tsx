@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState([]);
@@ -47,7 +48,7 @@ export default function CoursesPage() {
       {/* Hero */}
       <section className="bg-slate-900 text-white py-20 px-4 text-center">
         <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Courses at UF</h1>
-        <p className="text-lg md:text-xl text-slate-300">
+        <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
           Explore courses and find the right textbooks, reviewed by UF students.
         </p>
       </section>
@@ -74,19 +75,30 @@ export default function CoursesPage() {
 
       {/* Course Grid */}
       <section className="max-w-6xl mx-auto px-4 mt-20 pb-24">
-        <h2 className="text-2xl font-bold mb-8 text-center sm:text-left">Available Courses</h2>
+        <h2 className="text-2xl font-bold mb-8 text-center sm:text-left text-slate-900">
+          Available Courses
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map((course: any) => (
-            <div
+            <Link
               key={course.id}
-              className="bg-white p-5 rounded-xl border border-gray-200 shadow hover:shadow-md transition"
+              href={`/courses/${course.code.toLowerCase()}`}
+              className="block bg-white p-6 rounded-xl border border-gray-200 shadow hover:shadow-lg transition text-slate-900 hover:cursor-pointer hover:ring-2 hover:ring-slate-500"
             >
-              <h3 className="text-lg font-semibold text-gray-900">{course.code}</h3>
-              <p className="text-sm text-gray-600 mt-1">{course.title}</p>
-            </div>
+              <div className="flex flex-col gap-2">
+                <h3 className="text-xl font-semibold">{course.code}</h3>
+                <p>{course.title}</p>
+
+                {/* Placeholder Textbook Count */}
+                <span className="inline-block self-start bg-blue-100 text-slate-900 font-medium px-3 py-1 rounded-full text-sm shadow-sm">
+                  {course.textbookCount} textbook{course.textbookCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+            </Link>
           ))}
         </div>
       </section>
+
     </main>
   );
 }
