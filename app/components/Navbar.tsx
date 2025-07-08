@@ -35,7 +35,7 @@ export default async function Navbar() {
             <form action="/api/auth/logout" method="post" className="inline">
               <button
                 type="submit"
-                className="text-gray-700 hover:text-slate-900 transition"
+                className="text-gray-700 hover:text-slate-900 transition cursor-pointer"
               >
                 Logout
               </button>

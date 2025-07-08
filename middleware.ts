@@ -4,26 +4,27 @@ import { createClient } from './utils/supabase/middleware';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Fix casing in URL path
   if (pathname !== pathname.toLowerCase()) {
     const url = request.nextUrl.clone();
-    url.pathname = pathname.toLowerCase(); // ✅ sets correct absolute path
+    url.pathname = pathname.toLowerCase();
     return NextResponse.redirect(url);
   }
+  
+  if (pathname.startsWith('/profile')) {
+    const { supabase, response } = createClient(request);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const { supabase, response } = createClient(request);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
 
-  if (!user) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return response;
   }
-
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/profile/:path*', '/courses/:path*'],
+  matcher: ['/:path*'],
 };
