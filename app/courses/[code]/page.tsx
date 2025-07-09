@@ -48,7 +48,6 @@ export default async function CoursePage({
           {course.code.toUpperCase()} – {course.title}
         </h1>
         <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-          Below are textbooks used or recommended for this course by UF students.
         </p>
       </section>
 
