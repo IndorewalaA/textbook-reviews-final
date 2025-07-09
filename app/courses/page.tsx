@@ -41,8 +41,6 @@ export default function CoursesPage() {
     router.push(`/search?q=${encodeURIComponent(query.trim())}`);
   };
 
-  if (loading) return <p className="p-6 text-center text-gray-600">Loading...</p>;
-
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
       {/* Hero */}
@@ -78,27 +76,29 @@ export default function CoursesPage() {
         <h2 className="text-2xl font-bold mb-8 text-center sm:text-left text-slate-900">
           Available Courses
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((course: any) => (
-            <Link
-              key={course.id}
-              href={`/courses/${course.code.toLowerCase()}`}
-              className="block bg-white p-6 rounded-xl border border-gray-200 shadow hover:shadow-lg transition text-slate-900 hover:cursor-pointer hover:ring-2 hover:ring-slate-500"
-            >
-              <div className="flex flex-col gap-2">
-                <h3 className="text-xl font-semibold">{course.code}</h3>
-                <p>{course.title}</p>
 
-                {/* Placeholder Textbook Count */}
-                <span className="inline-block self-start bg-blue-100 text-slate-900 font-medium px-3 py-1 rounded-full text-sm shadow-sm">
-                  {course.textbookCount} textbook{course.textbookCount !== 1 ? 's' : ''}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {loading ? (
+          <p className="text-center text-gray-500 text-lg py-10">Loading courses...</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map((course: any) => (
+              <Link
+                key={course.id}
+                href={`/courses/${course.code.toLowerCase()}`}
+                className="block bg-white p-6 rounded-xl border border-gray-200 shadow hover:shadow-lg transition text-slate-900 hover:cursor-pointer hover:ring-2 hover:ring-slate-500"
+              >
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-xl font-semibold">{course.code}</h3>
+                  <p>{course.title}</p>
+                  <span className="inline-block self-start bg-blue-100 text-slate-900 font-medium px-3 py-1 rounded-full text-sm shadow-sm">
+                    {course.textbookCount} textbook{course.textbookCount !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
-
     </main>
   );
 }
