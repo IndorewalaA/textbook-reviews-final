@@ -30,11 +30,11 @@ export default function HomePage() {
       </section>
 
       {/* Search Section */}
-      <section className="max-w-2xl mx-auto px-4 mt-12">
+      <section className="max-w-3xl mx-auto px-4 mt-12">
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
-            placeholder="Search by course code or textbook name..."
+            placeholder="Search for a course, textbook, or author..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="flex-grow px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"

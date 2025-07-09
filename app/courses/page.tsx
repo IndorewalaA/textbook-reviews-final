@@ -56,7 +56,7 @@ export default function CoursesPage() {
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
-            placeholder="Search by course code or title..."
+            placeholder="Search for a course, textbook, or author..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="flex-grow px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-500 transition outline-none"
