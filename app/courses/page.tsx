@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
-import SearchBar from '@/app/components/SearchBar';
+import SearchBar from '@/components/SearchBar';
 
 export default async function CoursesPage() {
   const supabase = await createClient();

@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
-import SearchBar from '@/app/components/SearchBar';
+import SearchBar from '@/components/SearchBar';
 import { notFound } from 'next/navigation';
 
 export default async function CoursePage({ params }: { params: { code: string } }) {
@@ -61,9 +61,10 @@ export default async function CoursePage({ params }: { params: { code: string } 
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {textbooks.map((book) => (
-              <div
+              <Link
+                href={`/courses/textbooks/${book.id}`}
                 key={book.id}
-                className="bg-white p-6 rounded-2xl shadow-md hover:shadow-xl border border-gray-200 transition-all flex flex-col items-center text-center"
+                className="block bg-white p-6 rounded-xl border border-gray-200 shadow hover:shadow-lg transition text-slate-900 hover:cursor-pointer hover:ring-2 hover:ring-slate-500"
               >
                 {book.image_path && (
                   <img
@@ -78,7 +79,7 @@ export default async function CoursePage({ params }: { params: { code: string } 
                 {book.edition && (
                   <p className="text-xs text-gray-500 mt-1 italic">Edition: {book.edition}</p>
                 )}
-              </div>
+              </Link>
             ))}
           </div>
         )}

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import SearchBar from '@/app/components/SearchBar'
+import SearchBar from '@/components/SearchBar'
 
 export default function HomePage() {
   const [query, setQuery] = useState('');

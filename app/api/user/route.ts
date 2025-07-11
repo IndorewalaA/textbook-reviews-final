@@ -6,9 +6,9 @@ import { createAdminClient } from '@/utils/supabase/admin'
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const {
-        data: { user },
-        error: error,
-    } = await supabase.auth.getUser();
+    data: { user },
+    error: error,
+  } = await supabase.auth.getUser();
 
   if (error || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,46 +18,46 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-    const supabase = await createClient();
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+  }
+
+  const formData = await req.formData()
+  const username = formData.get('username') as string | null;
+  const email = formData.get('email') as string | null;
+  const password = formData.get('password') as string | null;
+
+  if (email || password) {
+    const updatePayload: { email?: string; password?: string } = {};
+
+    if (email) updatePayload.email = email;
+    if (password && password.length >= 6) updatePayload.password = password;
+    const { error: updateError } = await supabase.auth.updateUser(updatePayload);
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 400 });
+    }
+  }
+
+  if (username) {
     const {
-        data: { user },
-        error: authError,
-    } = await supabase.auth.getUser();
+      error: dbUpdateError
+    } = await supabase
+      .from('users')
+      .update({ display_name: username })
+      .eq('id', user.id)
 
-    if (authError || !user) {
-        return NextResponse.json({ error: 'Not authorized' }, { status: 401 });
+    if (dbUpdateError) {
+      return NextResponse.json({ error: dbUpdateError.message }, { status: 500 });
     }
+  }
 
-    const formData = await req.formData()
-    const username = formData.get('username') as string | null;
-    const email = formData.get('email') as string | null;
-    const password = formData.get('password') as string | null;
-
-    if (email || password) {
-        const updatePayload: { email?: string; password?: string } = {};
-
-        if (email) updatePayload.email = email;
-        if (password && password.length >= 6) updatePayload.password = password;
-        const { error: updateError } = await supabase.auth.updateUser(updatePayload);
-        if (updateError) {
-            return NextResponse.json({ error: updateError.message }, { status: 400 });
-        }
-    }
-
-    if (username) {
-        const { 
-            error: dbUpdateError 
-        } = await supabase
-            .from('users')
-            .update({display_name: username})
-            .eq('id', user.id)
-    
-        if (dbUpdateError) {
-            return NextResponse.json({ error: dbUpdateError.message }, { status: 500 });
-        }
-    }
-
-    return NextResponse.json({ message: 'User updated successfully' });
+  return NextResponse.json({ message: 'User updated successfully' });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -81,10 +81,10 @@ export async function DELETE(req: NextRequest) {
 
   try {
     const deletions = [
-      supabase.from('users').delete().eq('id', user.id),
-      supabase.from('reviews').delete().eq('user_id', user.id),
       supabase.from('review_votes').delete().eq('user_id', user.id),
       supabase.from('flags').delete().eq('user_id', user.id),
+      supabase.from('reviews').delete().eq('user_id', user.id),
+      supabase.from('users').delete().eq('id', user.id),
     ];
 
     for (const deletion of deletions) {

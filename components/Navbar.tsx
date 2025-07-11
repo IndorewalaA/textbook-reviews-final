@@ -5,6 +5,27 @@ export default async function Navbar() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  let isAdmin = false;
+
+  if (user) {
+    const { data: userRole, error: roleError } = await supabase
+      .from('users')
+      .select('role_id')
+      .eq('id', user.id)
+      .single();
+
+    if (userRole?.role_id) {
+      const { data: role, error: roleGetError } = await supabase
+        .from('roles')
+        .select('name')
+        .eq('id', userRole.role_id)
+        .single();
+
+      if (role?.name === 'admin') {
+        isAdmin = true;
+      }
+    }
+  }
   return (
     <nav className="bg-gray-50 border-b border-gray-200 shadow-sm px-6 py-3 flex justify-between items-center">
       {/* Logo */}
@@ -14,6 +35,12 @@ export default async function Navbar() {
 
       {/* Navigation Links */}
       <div className="flex items-center gap-4 text-sm font-medium">
+        {isAdmin && (
+          <Link href="/admin" className="text-gray-700 hover:text-slate-900 transition">
+            Admin
+          </Link>
+        )}
+
         <Link href="/courses" className="text-gray-700 hover:text-slate-900 transition">
           Courses
         </Link>
