@@ -6,9 +6,13 @@ export default function AdminPage() {
   const [modalType, setModalType] = useState<'course' | 'textbook' | null>(null);
   const closeModal = () => setModalType(null);
 
-  const [courseData, setCourseData] = useState({
-    code: '',
+  const [courseData, setCourseData] = useState({ code: '', title: '' });
+  const [textbookData, setTextbookData] = useState({
+    courseId: '',
     title: '',
+    author: '',
+    edition: '',
+    imageFile: null as File | null,
   });
 
   const handleCourseSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -17,38 +21,72 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/course', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: courseData.code,
-          title: courseData.title,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(courseData),
       });
 
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Update failed!');
+      if (!res.ok) throw new Error(result.error || 'Course creation failed.');
 
-      // Optional: reset form and close modal
       setCourseData({ code: '', title: '' });
       closeModal();
+      alert(result.message || 'Course added!');
     } catch (err: any) {
-      console.error('Course submit failed:', err.message);
-      alert(err.message);
+      console.error(err);
+      alert(err.message || 'Failed to add course');
+    }
+  };
+
+  const handleTextbookSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    try {
+      const formData = new FormData();
+      formData.append('courseId', textbookData.courseId);
+      formData.append('title', textbookData.title);
+      formData.append('author', textbookData.author);
+      formData.append('edition', textbookData.edition || '');
+      if (textbookData.imageFile) {
+        formData.append('image', textbookData.imageFile);
+      }
+
+      const res = await fetch('/api/textbook', {
+        method: 'POST',
+        body: formData,
+      });
+
+      let result;
+      try {
+        result = await res.json();
+      } catch {
+        throw new Error('Invalid server response.');
+      }
+
+      if (!res.ok) throw new Error(result.error || 'Textbook creation failed.');
+
+      setTextbookData({
+        courseId: '',
+        title: '',
+        author: '',
+        edition: '',
+        imageFile: null,
+      });
+      closeModal();
+      alert(result.message || 'Textbook added!');
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Failed to add textbook');
     }
   };
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
       <div className="max-w-3xl mx-auto px-6 py-14 space-y-12">
-
-        {/* Header */}
         <header className="text-center">
           <h1 className="text-5xl font-extrabold text-blue-700">Admin Dashboard</h1>
           <p className="text-lg text-gray-600 mt-4">Manage courses and textbooks</p>
         </header>
 
-        {/* Action Buttons */}
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <button
             onClick={() => setModalType('course')}
@@ -65,7 +103,6 @@ export default function AdminPage() {
         </section>
       </div>
 
-      {/* Modal */}
       {modalType && (
         <div className="fixed inset-0 z-50 bg-gray-900/30 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-xl relative">
@@ -82,7 +119,8 @@ export default function AdminPage() {
 
             <form
               className="space-y-4"
-              onSubmit={modalType === 'course' ? handleCourseSubmit : undefined}
+              onSubmit={modalType === 'course' ? handleCourseSubmit : handleTextbookSubmit}
+              encType={modalType === 'textbook' ? 'multipart/form-data' : undefined}
             >
               {modalType === 'course' ? (
                 <>
@@ -111,27 +149,57 @@ export default function AdminPage() {
                 <>
                   <input
                     type="text"
-                    placeholder="Course Code"
+                    placeholder="Course ID"
+                    value={textbookData.courseId}
+                    onChange={(e) =>
+                      setTextbookData({ ...textbookData, courseId: e.target.value })
+                    }
                     className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                    required
                   />
                   <input
                     type="text"
                     placeholder="Textbook Title"
+                    value={textbookData.title}
+                    onChange={(e) =>
+                      setTextbookData({ ...textbookData, title: e.target.value })
+                    }
                     className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                    required
                   />
                   <input
                     type="text"
                     placeholder="Author"
+                    value={textbookData.author}
+                    onChange={(e) =>
+                      setTextbookData({ ...textbookData, author: e.target.value })
+                    }
                     className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                    required
                   />
                   <input
                     type="text"
-                    placeholder="Edition"
+                    placeholder="Edition (optional)"
+                    value={textbookData.edition}
+                    onChange={(e) =>
+                      setTextbookData({ ...textbookData, edition: e.target.value })
+                    }
                     className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                   />
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col space-y-2">
                     <label className="text-gray-700 font-medium">Upload Image</label>
-                    <input type="file" accept="image/*" className="block w-full mt-1" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setTextbookData({
+                          ...textbookData,
+                          imageFile: e.target.files?.[0] || null,
+                        })
+                      }
+                      className="w-full"
+                      required
+                    />
                   </div>
                 </>
               )}
