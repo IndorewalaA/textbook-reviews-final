@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid image extension.' }, { status: 400 });
   }
 
-  const storagePath = `${user.id}`; // no extension
+  const storagePath = `${user.id}`;
   const { error: uploadError } = await supabase.storage
     .from('profile-pictures')
     .upload(storagePath, file, {
