@@ -2,17 +2,19 @@ import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
 import { notFound } from 'next/navigation';
+import { slugify } from '@/utils/slugify';
 
-export default async function CoursePage({ params }: { params: { code: string } }) {
+export default async function CoursePage({ params }: { params: { courseTitle: string } }) {
   const supabase = await createClient();
 
-  const { data: course, error: courseError } = await supabase
+  const { data: courseList, error: courseError } = await supabase
     .from('courses')
-    .select('id, code, title')
-    .eq('code', params.code.toUpperCase())
-    .single();
+    .select('id, code, title');
 
-  if (courseError || !course) return notFound();
+  if (courseError || !courseList) return notFound();
+
+  const course = courseList.find((c) => slugify(c.title) === params.courseTitle);
+  if (!course) return notFound();
 
   const { data: joinList, error: joinListError } = await supabase
     .from('course_textbooks')
@@ -32,7 +34,6 @@ export default async function CoursePage({ params }: { params: { code: string } 
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
-      {/* Hero */}
       <section className="bg-slate-900 text-white py-24 px-6 text-center shadow-md">
         <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
           {course.code} – {course.title}
@@ -42,10 +43,8 @@ export default async function CoursePage({ params }: { params: { code: string } 
         </p>
       </section>
 
-      {/* Search */}
       <SearchBar />
 
-      {/* Textbooks Section */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pb-24">
         <Link
           href="/courses"
@@ -62,13 +61,13 @@ export default async function CoursePage({ params }: { params: { code: string } 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {textbooks.map((book) => (
               <Link
-                href={`/courses/textbooks/${book.id}`}
+                href={`/courses/${slugify(course.title)}/${slugify(book.title)}`}
                 key={book.id}
                 className="block bg-white p-6 rounded-xl border border-gray-200 shadow hover:shadow-lg transition text-slate-900 hover:cursor-pointer hover:ring-2 hover:ring-slate-500"
               >
                 {book.image_path && (
                   <img
-                    src={`https://urfkyhsntpwpwpsmskcz.supabase.co/storage/v1/object/public/textbooks//${book.image_path}`}
+                    src={`https://urfkyhsntpwpwpsmskcz.supabase.co/storage/v1/object/public/textbooks/${book.image_path}`}
                     alt={book.title}
                     className="h-48 w-32 object-contain rounded-md shadow-sm mx-auto mb-4"
                   />

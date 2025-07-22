@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
+import { slugify } from '@/utils/slugify';
 
 export default async function CoursesPage() {
   const supabase = await createClient();
@@ -53,10 +54,8 @@ export default async function CoursesPage() {
         </p>
       </section>
 
-      {/* Search*/}
       <SearchBar />
 
-      {/* Course Grid */}
       <section className="max-w-6xl mx-auto px-4 mt-20 pb-24">
         <h2 className="text-2xl font-bold mb-8 text-center sm:text-left text-slate-900">
           Available Courses
@@ -66,7 +65,7 @@ export default async function CoursesPage() {
           {courses.map((course) => (
             <Link
               key={course.id}
-              href={`/courses/${course.code.toLowerCase()}`}
+              href={`/courses/${slugify(course.title)}`}
               className="block bg-white p-6 rounded-xl border border-gray-200 shadow hover:shadow-lg transition text-slate-900 hover:cursor-pointer hover:ring-2 hover:ring-slate-500"
             >
               <div className="flex flex-col gap-2">

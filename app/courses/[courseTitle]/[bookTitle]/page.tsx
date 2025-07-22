@@ -1,50 +1,74 @@
 import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { slugify } from '@/utils/slugify';
 
-export default async function TextbookPage({ params }: { params: { id: string } }) {
+export default async function TextbookPage({
+  params,
+}: {
+  params: { courseTitle: string; bookTitle: string };
+}) {
   const supabase = await createClient();
 
-  // Get textbook
-  const { data: textbook, error: textbookError } = await supabase
-    .from('textbooks')
-    .select('id, title, author, edition, image_path')
-    .eq('id', params.id)
-    .single();
+  // Extract slug params safely
+  const courseTitleSlug = params.courseTitle;
+  const bookTitleSlug = params.bookTitle;
 
-  if (textbookError || !textbook) return notFound();
+  // Fetch all courses
+  const { data: courseList, error: courseError } = await supabase
+    .from('courses')
+    .select('id, code, title');
 
-  // Get course_textbook join
+  if (courseError || !courseList) return notFound();
+
+  // Match course by slug
+  const course = courseList.find(
+    (c) => slugify(c.title) === courseTitleSlug
+  );
+  if (!course) return notFound();
+
+  // Fetch all course-textbook associations
   const { data: joinList, error: joinListError } = await supabase
     .from('course_textbooks')
-    .select('id, course_id')
-    .eq('textbook_id', textbook.id)
-    .maybeSingle();
+    .select('id, textbook_id')
+    .eq('course_id', course.id);
 
   if (joinListError || !joinList) return notFound();
 
-  // Get course
-  const { data: course, error: courseError } = await supabase
-    .from('courses')
-    .select('id, code, title')
-    .eq('id', joinList.course_id)
-    .single();
+  const textbookIDs = joinList.map((j) => j.textbook_id);
 
-  if (courseError || !course) return notFound();
+  // Fetch textbook details
+  const { data: textbooks, error: bookError } = await supabase
+    .from('textbooks')
+    .select('id, title, author, edition, image_path')
+    .in('id', textbookIDs);
 
-  // Get reviews
+  if (bookError || !textbooks) return notFound();
+
+  const textbook = textbooks.find(
+    (b) => slugify(b.title) === bookTitleSlug
+  );
+  if (!textbook) return notFound();
+
+  const courseTextbook = joinList.find((j) => j.textbook_id === textbook.id);
+  if (!courseTextbook) return notFound();
+
+  // Fetch reviews
   const { data: reviews, error: reviewsError } = await supabase
     .from('reviews')
     .select('id, user_id, rating, text, is_anonymous, created_at')
-    .eq('course_textbook_id', joinList.id);
+    .eq('course_textbook_id', courseTextbook.id);
 
-  if (reviewsError) return notFound();
+  if (reviewsError || !reviews) return notFound();
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
         {/* Back link */}
-        <Link href={`/courses/${course.code}`} className="text-lg text-blue-600 hover:underline">
+        <Link
+          href={`/courses/${slugify(course.title)}`}
+          className="text-lg text-blue-600 hover:underline"
+        >
           ← Back to {course.code}
         </Link>
 
@@ -53,7 +77,7 @@ export default async function TextbookPage({ params }: { params: { id: string } 
           <div className="flex items-start gap-6">
             {textbook.image_path && (
               <img
-                src={`https://urfkyhsntpwpwpsmskcz.supabase.co/storage/v1/object/public/textbooks//${textbook.image_path}`}
+                src={`https://urfkyhsntpwpwpsmskcz.supabase.co/storage/v1/object/public/textbooks/${textbook.image_path}`}
                 alt={textbook.title}
                 className="w-28 h-auto rounded shadow"
               />
