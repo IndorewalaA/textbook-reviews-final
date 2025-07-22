@@ -2,6 +2,14 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { slugify } from '@/utils/slugify';
+import {
+  FaThumbsUp,
+  FaThumbsDown,
+  FaEdit,
+  FaTrashAlt,
+  FaUserCircle,
+  FaStar,
+} from 'react-icons/fa';
 
 export default async function TextbookPage({
   params,
@@ -10,24 +18,18 @@ export default async function TextbookPage({
 }) {
   const supabase = await createClient();
 
-  // Extract slug params safely
   const courseTitleSlug = params.courseTitle;
   const bookTitleSlug = params.bookTitle;
 
-  // Fetch all courses
   const { data: courseList, error: courseError } = await supabase
     .from('courses')
     .select('id, code, title');
 
   if (courseError || !courseList) return notFound();
 
-  // Match course by slug
-  const course = courseList.find(
-    (c) => slugify(c.title) === courseTitleSlug
-  );
+  const course = courseList.find((c) => slugify(c.title) === courseTitleSlug);
   if (!course) return notFound();
 
-  // Fetch all course-textbook associations
   const { data: joinList, error: joinListError } = await supabase
     .from('course_textbooks')
     .select('id, textbook_id')
@@ -37,7 +39,6 @@ export default async function TextbookPage({
 
   const textbookIDs = joinList.map((j) => j.textbook_id);
 
-  // Fetch textbook details
   const { data: textbooks, error: bookError } = await supabase
     .from('textbooks')
     .select('id, title, author, edition, image_path')
@@ -45,15 +46,12 @@ export default async function TextbookPage({
 
   if (bookError || !textbooks) return notFound();
 
-  const textbook = textbooks.find(
-    (b) => slugify(b.title) === bookTitleSlug
-  );
+  const textbook = textbooks.find((b) => slugify(b.title) === bookTitleSlug);
   if (!textbook) return notFound();
 
   const courseTextbook = joinList.find((j) => j.textbook_id === textbook.id);
   if (!courseTextbook) return notFound();
 
-  // Fetch reviews
   const { data: reviews, error: reviewsError } = await supabase
     .from('reviews')
     .select('id, user_id, rating, text, is_anonymous, created_at')
@@ -72,7 +70,7 @@ export default async function TextbookPage({
           ← Back to {course.code}
         </Link>
 
-        {/* Textbook Header */}
+        {/* Textbook Header + Course Info */}
         <section className="bg-white shadow-md rounded-lg p-6">
           <div className="flex items-start gap-6">
             {textbook.image_path && (
@@ -82,7 +80,7 @@ export default async function TextbookPage({
                 className="w-28 h-auto rounded shadow"
               />
             )}
-            <div>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold mb-2">{textbook.title}</h1>
               <p className="text-gray-700 mb-1">
                 <span className="font-semibold">Author:</span> {textbook.author}
@@ -92,41 +90,124 @@ export default async function TextbookPage({
                   <span className="font-semibold">Edition:</span> {textbook.edition}
                 </p>
               )}
+              <p className="text-gray-700 mt-4">
+                <span className="font-semibold">Associated Course:</span>{' '}
+                {course.code} – {course.title}
+              </p>
             </div>
           </div>
         </section>
 
-        {/* Course Info */}
-        <section className="bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-2">Associated Course</h2>
-          <p className="text-gray-700">
-            {course.code} – {course.title}
-          </p>
-        </section>
+        {/* Overall Rating */}
+        <div className="mb-8">
+          {reviews.length > 0 ? (
+            <div className="flex items-center gap-4">
+              <div className="text-2xl font-bold text-gray-800">Overall Rating: </div>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: 5 }).map((_, i) => {
+                  const avg =
+                    reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+                  const rounded = Math.round(avg * 2) / 2;
+                  if (i + 1 <= rounded) {
+                    return <FaStar key={i} size={24} className="text-yellow-500" />;
+                  } else if (i + 0.5 === rounded) {
+                    return (
+                      <FaStar
+                        key={i}
+                        size={24}
+                        className="text-yellow-500 opacity-50"
+                      />
+                    );
+                  } else {
+                    return <FaStar key={i} size={24} className="text-gray-300" />;
+                  }
+                })}
+                <span className="ml-2 text-xl font-semibold text-gray-700">
+                  {(
+                    reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+                  ).toFixed(1)}
+                  /5
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-lg text-gray-500 italic mb-6">
+              No ratings yet to calculate an average.
+            </div>
+          )}
+        </div>
 
         {/* Reviews Section */}
         <section className="bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Student Reviews</h2>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6">Student Reviews</h2>
 
           {reviews.length === 0 ? (
-            <p className="text-gray-600 italic">No reviews yet.</p>
+            <p className="text-gray-500 italic">No reviews yet. Be the first to leave one!</p>
           ) : (
-            <ul className="space-y-4">
+            <div className="space-y-6">
               {reviews.map((review) => (
-                <li key={review.id} className="border-t pt-4">
-                  <p className="text-sm text-gray-600 mb-1">
-                    {review.is_anonymous
-                      ? 'Anonymous'
-                      : `User ID: ${review.user_id}`}{' '}
-                    – {new Date(review.created_at).toLocaleDateString()}
-                  </p>
-                  <p className="text-yellow-600 font-semibold">
-                    Rating: {review.rating}/5
-                  </p>
-                  {review.text && <p className="mt-2">{review.text}</p>}
-                </li>
+                <div
+                  key={review.id}
+                  className="bg-gray-100 rounded-lg p-5 shadow-sm hover:shadow-md transition"
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <FaUserCircle size={30} className="text-gray-500" />
+                      <div className="text-sm">
+                        <p className="font-semibold text-gray-800">
+                          {review.is_anonymous
+                            ? 'Anonymous'
+                            : `User ID: ${review.user_id}`}
+                        </p>
+                        <p className="text-gray-500 text-xs">
+                          {new Date(review.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="flex items-center gap-1 px-3 py-1.5 rounded-md text-white bg-blue-600 hover:bg-blue-700 text-sm transition">
+                        <FaEdit size={18} />
+                        <span>Edit</span>
+                      </button>
+                      <button className="flex items-center gap-1 px-3 py-1.5 rounded-md text-white bg-red-500 hover:bg-red-600 text-sm transition">
+                        <FaTrashAlt size={18} />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                  {/* Rating */}
+                  <div className="flex items-center gap-1 mb-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <FaStar
+                        key={i}
+                        size={22}
+                        className={i < review.rating ? 'text-yellow-500' : 'text-gray-300'}
+                      />
+                    ))}
+                    <span className="ml-3 text-lg font-semibold text-gray-800">
+                      {review.rating}/5
+                    </span>
+                  </div>
+                  {/* Text */}
+                  {review.text && (
+                    <p className="text-gray-700 leading-relaxed mb-4">{review.text}</p>
+                  )}
+
+                  {/* Voting */}
+                  <div className="flex items-center gap-6 text-sm text-gray-600">
+                    <button className="flex items-center gap-2 hover:text-green-600 transition">
+                      <FaThumbsUp size={14} />
+                      <span>Upvote</span>
+                    </button>
+                    <button className="flex items-center gap-2 hover:text-red-600 transition">
+                      <FaThumbsDown size={14} />
+                      <span>Downvote</span>
+                    </button>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </section>
       </div>
