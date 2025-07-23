@@ -33,7 +33,6 @@ export default async function TextbookPage({ params }: { params: { courseTitle: 
   const reviews = await reviewRes.json();
   if (reviews.error || !reviews) return notFound();
 
-  console.log('review sample:', reviews[0]);
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
