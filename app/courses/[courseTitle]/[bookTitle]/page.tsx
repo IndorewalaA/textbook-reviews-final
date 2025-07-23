@@ -2,62 +2,36 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { slugify } from '@/utils/slugify';
-import {
-  FaThumbsUp,
-  FaThumbsDown,
-  FaEdit,
-  FaTrashAlt,
-  FaUserCircle,
-  FaStar,
-} from 'react-icons/fa';
+import { FaThumbsUp, FaThumbsDown, FaEdit, FaTrashAlt, FaUserCircle, FaStar } from 'react-icons/fa';
 
-export default async function TextbookPage({
-  params,
-}: {
-  params: { courseTitle: string; bookTitle: string };
-}) {
+export default async function TextbookPage({ params }: { params: { courseTitle: string; bookTitle: string } }) {
   const supabase = await createClient();
 
   const courseTitleSlug = params.courseTitle;
   const bookTitleSlug = params.bookTitle;
 
-  const { data: courseList, error: courseError } = await supabase
-    .from('courses')
-    .select('id, code, title');
+  const courseRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/course/${courseTitleSlug}`);
+  const course = await courseRes.json();
+  if (!course || course.error) return notFound();
 
-  if (courseError || !courseList) return notFound();
+  const joinRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/course-textbook/${course.id}`);
+  const joinList = await joinRes.json();
+  if (!joinList || joinList.error) return notFound();
 
-  const course = courseList.find((c) => slugify(c.title) === courseTitleSlug);
-  if (!course) return notFound();
+  const textbookIDs = joinList.map((j: any) => j.textbook_id).join(',');
+  const bookRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/textbook/many?ids=${textbookIDs}`);
+  const textbooks = await bookRes.json();
+  if (!textbooks || textbooks.error) return notFound();
 
-  const { data: joinList, error: joinListError } = await supabase
-    .from('course_textbooks')
-    .select('id, textbook_id')
-    .eq('course_id', course.id);
-
-  if (joinListError || !joinList) return notFound();
-
-  const textbookIDs = joinList.map((j) => j.textbook_id);
-
-  const { data: textbooks, error: bookError } = await supabase
-    .from('textbooks')
-    .select('id, title, author, edition, image_path')
-    .in('id', textbookIDs);
-
-  if (bookError || !textbooks) return notFound();
-
-  const textbook = textbooks.find((b) => slugify(b.title) === bookTitleSlug);
+  const textbook = textbooks.find((b: any) => slugify(b.title) === bookTitleSlug);
   if (!textbook) return notFound();
 
-  const courseTextbook = joinList.find((j) => j.textbook_id === textbook.id);
+  const courseTextbook = joinList.find((j: any) => j.textbook_id === textbook.id);
   if (!courseTextbook) return notFound();
 
-  const { data: reviews, error: reviewsError } = await supabase
-    .from('reviews')
-    .select('id, user_id, rating, text, is_anonymous, created_at')
-    .eq('course_textbook_id', courseTextbook.id);
-
-  if (reviewsError || !reviews) return notFound();
+  const reviewRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/review/${courseTextbook.id}`);
+  const reviews = await reviewRes.json();
+  if (reviews.error || !reviews) return notFound();
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
@@ -106,7 +80,7 @@ export default async function TextbookPage({
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => {
                   const avg =
-                    reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+                    reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length;
                   const rounded = Math.round(avg * 2) / 2;
                   if (i + 1 <= rounded) {
                     return <FaStar key={i} size={24} className="text-yellow-500" />;
@@ -124,7 +98,7 @@ export default async function TextbookPage({
                 })}
                 <span className="ml-2 text-xl font-semibold text-gray-700">
                   {(
-                    reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+                    reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length
                   ).toFixed(1)}
                   /5
                 </span>
@@ -145,7 +119,7 @@ export default async function TextbookPage({
             <p className="text-gray-500 italic">No reviews yet. Be the first to leave one!</p>
           ) : (
             <div className="space-y-6">
-              {reviews.map((review) => (
+              {reviews.map((review: any) => (
                 <div
                   key={review.id}
                   className="bg-gray-100 rounded-lg p-5 shadow-sm hover:shadow-md transition"

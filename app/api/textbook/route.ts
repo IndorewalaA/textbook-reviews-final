@@ -2,6 +2,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 
+// Insert Textbook
 export async function POST(req: NextRequest) {
     const supabase = createAdminClient();
     const formData = await req.formData();

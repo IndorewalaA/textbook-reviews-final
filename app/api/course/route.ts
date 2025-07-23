@@ -1,7 +1,9 @@
 export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { createClient } from '@/utils/supabase/server';
 
+// Add Course
 export async function POST(req: NextRequest) {
     const supabase = createAdminClient();
     const { code, title } = await req.json();
