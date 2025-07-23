@@ -19,7 +19,7 @@ export default function AdminPage() {
     e.preventDefault();
 
     try {
-      const res = await fetch('/api/course', {
+      const res = await fetch('/api/courses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(courseData),
@@ -50,7 +50,7 @@ export default function AdminPage() {
         formData.append('image', textbookData.imageFile);
       }
 
-      const res = await fetch('/api/textbook', {
+      const res = await fetch('/api/textbooks', {
         method: 'POST',
         body: formData,
       });

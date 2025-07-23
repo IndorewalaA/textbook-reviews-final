@@ -10,16 +10,16 @@ export default async function TextbookPage({ params }: { params: { courseTitle: 
   const courseTitleSlug = params.courseTitle;
   const bookTitleSlug = params.bookTitle;
 
-  const courseRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/course/${courseTitleSlug}`);
+  const courseRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/courses/${courseTitleSlug}`);
   const course = await courseRes.json();
   if (!course || course.error) return notFound();
 
-  const joinRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/course-textbook/${course.id}`);
+  const joinRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/course-textbooks/${course.id}`);
   const joinList = await joinRes.json();
   if (!joinList || joinList.error) return notFound();
 
   const textbookIDs = joinList.map((j: any) => j.textbook_id).join(',');
-  const bookRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/textbook/many?ids=${textbookIDs}`);
+  const bookRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/textbooks/many?ids=${textbookIDs}`);
   const textbooks = await bookRes.json();
   if (!textbooks || textbooks.error) return notFound();
 
@@ -29,7 +29,7 @@ export default async function TextbookPage({ params }: { params: { courseTitle: 
   const courseTextbook = joinList.find((j: any) => j.textbook_id === textbook.id);
   if (!courseTextbook) return notFound();
 
-  const reviewRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/review/${courseTextbook.id}`);
+  const reviewRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/reviews/${courseTextbook.id}`);
   const reviews = await reviewRes.json();
   if (reviews.error || !reviews) return notFound();
 
