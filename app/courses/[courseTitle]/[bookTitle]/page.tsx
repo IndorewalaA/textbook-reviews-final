@@ -33,6 +33,7 @@ export default async function TextbookPage({ params }: { params: { courseTitle: 
   const reviews = await reviewRes.json();
   if (reviews.error || !reviews) return notFound();
 
+  console.log('review sample:', reviews[0]);
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
@@ -127,12 +128,21 @@ export default async function TextbookPage({ params }: { params: { courseTitle: 
                   {/* Header */}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <FaUserCircle size={30} className="text-gray-500" />
+                      {!review.is_anonymous && review.users?.avatar_url ? (
+                        <img
+                          src={review.users.avatar_url}
+                          alt="Profile"
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <FaUserCircle size={30} className="text-gray-500" />
+                      )}
+
                       <div className="text-sm">
                         <p className="font-semibold text-gray-800">
                           {review.is_anonymous
                             ? 'Anonymous'
-                            : `User ID: ${review.user_id}`}
+                            : review.users?.display_name || 'Unknown User' }
                         </p>
                         <p className="text-gray-500 text-xs">
                           {new Date(review.created_at).toLocaleString()}
