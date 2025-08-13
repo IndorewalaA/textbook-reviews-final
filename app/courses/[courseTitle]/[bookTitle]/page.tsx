@@ -2,105 +2,114 @@ import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { slugify } from '@/utils/slugify';
-import { FaThumbsUp, FaThumbsDown, FaEdit, FaTrashAlt, FaUserCircle, FaStar } from 'react-icons/fa';
+import {
+  FaThumbsUp,
+  FaThumbsDown,
+  FaEdit,
+  FaTrashAlt,
+  FaUserCircle,
+  FaStar,
+} from 'react-icons/fa';
+export const revalidate = 60;
 
-export default async function TextbookPage({ params }: { params: { courseTitle: string; bookTitle: string } }) {
+export default async function TextbookPage({
+  params,
+}: {
+  params: { courseTitle: string; bookTitle: string };
+}) {
   const supabase = await createClient();
+  const { data: rows, error: detailsError } = await supabase
+    .from('course_textbook_details')
+    .select(
+      `course_textbook_id, course_id, course_code, course_title, course_slug, textbook_id, textbook_title, textbook_slug,
+      textbook_author, textbook_edition, textbook_isbn, textbook_image_path, average_rating, review_count`
+    )
+    .eq('course_slug', params.courseTitle)
+    .eq('textbook_slug', params.bookTitle)
+    .limit(1);
 
-  const courseTitleSlug = params.courseTitle;
-  const bookTitleSlug = params.bookTitle;
+  if (detailsError || !rows || rows.length === 0) {
+    return notFound();
+  }
 
-  const courseRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/courses/${courseTitleSlug}`);
-  const course = await courseRes.json();
-  if (!course || course.error) return notFound();
-
-  const joinRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/course-textbooks/${course.id}`);
-  const joinList = await joinRes.json();
-  if (!joinList || joinList.error) return notFound();
-
-  const textbookIDs = joinList.map((j: any) => j.textbook_id).join(',');
-  const bookRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/textbooks/many?ids=${textbookIDs}`);
-  const textbooks = await bookRes.json();
-  if (!textbooks || textbooks.error) return notFound();
-
-  const textbook = textbooks.find((b: any) => slugify(b.title) === bookTitleSlug);
-  if (!textbook) return notFound();
-
-  const courseTextbook = joinList.find((j: any) => j.textbook_id === textbook.id);
-  if (!courseTextbook) return notFound();
-
-  const reviewRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/reviews/${courseTextbook.id}`);
-  const reviews = await reviewRes.json();
-  if (reviews.error || !reviews) return notFound();
+  const r = rows[0] as any;
+  const { data: reviews, error: reviewsError } = await supabase
+    .from('reviews')
+    .select(
+      'id, user_id, rating, text, is_anonymous, created_at, users(display_name, avatar_url)'
+    )
+    .eq('course_textbook_id', r.course_textbook_id)
+    .order('created_at', { ascending: false });
+  const reviewList = Array.isArray(reviews) ? reviews : [];
+  const avg =
+    reviewList.length > 0
+      ? reviewList.reduce((s: number, x: any) => s + (x.rating ?? 0), 0) / reviewList.length
+      : 0;
+  const roundedHalf = Math.round(avg * 2) / 2;
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
-        {/* Back link */}
+        {/*Back link*/}
         <Link
-          href={`/courses/${slugify(course.title)}`}
+          href={`/courses/${r.course_slug}`}
           className="text-lg text-blue-600 hover:underline"
         >
-          ← Back to {course.code}
+          ← Back to {r.course_code}
         </Link>
 
-        {/* Textbook Header + Course Info */}
+        {/* Textbook Header*/}
         <section className="bg-white shadow-md rounded-lg p-6">
           <div className="flex items-start gap-6">
-            {textbook.image_path && (
+            {r.textbook_image_path && (
               <img
-                src={`https://urfkyhsntpwpwpsmskcz.supabase.co/storage/v1/object/public/textbooks/${textbook.image_path}`}
-                alt={textbook.title}
+                src={`https://urfkyhsntpwpwpsmskcz.supabase.co/storage/v1/object/public/textbooks/${r.textbook_image_path}`}
+                alt={r.textbook_title}
                 className="w-28 h-auto rounded shadow"
               />
             )}
             <div className="flex-1">
-              <h1 className="text-3xl font-bold mb-2">{textbook.title}</h1>
-              <p className="text-gray-700 mb-1">
-                <span className="font-semibold">Author:</span> {textbook.author}
-              </p>
-              {textbook.edition && (
+              <h1 className="text-3xl font-bold mb-2">{r.textbook_title}</h1>
+              {r.textbook_author && (
                 <p className="text-gray-700 mb-1">
-                  <span className="font-semibold">Edition:</span> {textbook.edition}
+                  <span className="font-semibold">Author:</span> {r.textbook_author}
+                </p>
+              )}
+              {r.textbook_edition && (
+                <p className="text-gray-700 mb-1">
+                  <span className="font-semibold">Edition:</span> {r.textbook_edition}
+                </p>
+              )}
+              {r.textbook_isbn && (
+                <p className="text-gray-700 mb-1">
+                  <span className="font-semibold">ISBN:</span> {r.textbook_isbn}
                 </p>
               )}
               <p className="text-gray-700 mt-4">
                 <span className="font-semibold">Associated Course:</span>{' '}
-                {course.code} – {course.title}
+                {r.course_code} – {r.course_title}
               </p>
             </div>
           </div>
         </section>
 
-        {/* Overall Rating */}
+        {/* Overall Rating*/}
         <div className="mb-8">
-          {reviews.length > 0 ? (
+          {reviewList.length > 0 ? (
             <div className="flex items-center gap-4">
               <div className="text-2xl font-bold text-gray-800">Overall Rating: </div>
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => {
-                  const avg =
-                    reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length;
-                  const rounded = Math.round(avg * 2) / 2;
-                  if (i + 1 <= rounded) {
+                  if (i + 1 <= roundedHalf) {
                     return <FaStar key={i} size={24} className="text-yellow-500" />;
-                  } else if (i + 0.5 === rounded) {
-                    return (
-                      <FaStar
-                        key={i}
-                        size={24}
-                        className="text-yellow-500 opacity-50"
-                      />
-                    );
+                  } else if (i + 0.5 === roundedHalf) {
+                    return <FaStar key={i} size={24} className="text-yellow-500 opacity-50" />;
                   } else {
                     return <FaStar key={i} size={24} className="text-gray-300" />;
                   }
                 })}
                 <span className="ml-2 text-xl font-semibold text-gray-700">
-                  {(
-                    reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length
-                  ).toFixed(1)}
-                  /5
+                  {avg.toFixed(1)}/5
                 </span>
               </div>
             </div>
@@ -111,15 +120,15 @@ export default async function TextbookPage({ params }: { params: { courseTitle: 
           )}
         </div>
 
-        {/* Reviews Section */}
+        {/* Reviews Section (keeps ALL details + buttons) */}
         <section className="bg-white shadow-md rounded-lg p-6">
           <h2 className="text-2xl font-semibold text-gray-800 mb-6">Student Reviews</h2>
 
-          {reviews.length === 0 ? (
+          {reviewList.length === 0 ? (
             <p className="text-gray-500 italic">No reviews yet. Be the first to leave one!</p>
           ) : (
             <div className="space-y-6">
-              {reviews.map((review: any) => (
+              {reviewList.map((review: any) => (
                 <div
                   key={review.id}
                   className="bg-gray-100 rounded-lg p-5 shadow-sm hover:shadow-md transition"
@@ -141,11 +150,13 @@ export default async function TextbookPage({ params }: { params: { courseTitle: 
                         <p className="font-semibold text-gray-800">
                           {review.is_anonymous
                             ? 'Anonymous'
-                            : review.users?.display_name || 'Unknown User' }
+                            : review.users?.display_name || 'Unknown User'}
                         </p>
                         <p className="text-gray-500 text-xs">
                           {new Date(review.created_at).toLocaleString()}
                         </p>
+                        {/* You said: keep user_id visible */}
+                        <p className="text-gray-400 text-xs">User ID: {review.user_id}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -159,6 +170,7 @@ export default async function TextbookPage({ params }: { params: { courseTitle: 
                       </button>
                     </div>
                   </div>
+
                   {/* Rating */}
                   <div className="flex items-center gap-1 mb-3">
                     {Array.from({ length: 5 }).map((_, i) => (
@@ -172,12 +184,13 @@ export default async function TextbookPage({ params }: { params: { courseTitle: 
                       {review.rating}/5
                     </span>
                   </div>
+
                   {/* Text */}
                   {review.text && (
                     <p className="text-gray-700 leading-relaxed mb-4">{review.text}</p>
                   )}
 
-                  {/* Voting */}
+                  {/* Voting buttons (UI kept; wire handlers later) */}
                   <div className="flex items-center gap-6 text-sm text-gray-600">
                     <button className="flex items-center gap-2 hover:text-green-600 transition">
                       <FaThumbsUp size={14} />

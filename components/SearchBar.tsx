@@ -1,43 +1,45 @@
-// app/components/SearchBar.tsx
+
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function SearchBar() {
-  const [query, setQuery] = useState('');
-  const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initial = searchParams.get('q') ?? '';
+  const [query, setQuery] = useState(initial);
+  const [error, setError] = useState('');
 
-  const handleSearch = (e: React.FormEvent) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) {
+    const q = query.trim();
+    if (!q) {
       setError('Please enter a search term.');
       return;
     }
-
     setError('');
-    router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    router.push(`/search?q=${encodeURIComponent(q)}`);
   };
 
   return (
-    <section className="max-w-3xl mx-auto px-4 mt-12">
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            placeholder="Search for a course, textbook, or author..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="flex-grow px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-          />
-          <button
-            type="submit"
-            className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition"
-          >
-            Search
-          </button>
-        </form>
-        {error && <p className="mt-2 text-sm text-red-500 text-center">{error}</p>}
-      </section>
+    <div className="max-w-3xl mx-auto px-4 mt-8">
+      <form onSubmit={onSubmit} className="flex gap-2">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by course (e.g., COP3530), course title, book title/author, or ISBN…"
+          className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Search textbooks and courses"
+        />
+        <button
+          type="submit"
+          className="rounded-lg bg-blue-600 px-5 py-3 text-white font-semibold shadow hover:bg-blue-700 transition"
+        >
+          Search
+        </button>
+      </form>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+    </div>
   );
 }
