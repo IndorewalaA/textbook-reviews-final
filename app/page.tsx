@@ -6,6 +6,7 @@ import SearchBar from '@/components/SearchBar';
 import { slugify } from '@/utils/slugify';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
+import { FaStar } from 'react-icons/fa';
 
 type PopularTextbook = {
   id: string;
@@ -92,6 +93,11 @@ export default function HomePage() {
               if (!item) return null;
               const isCenter = i === 1;
               const linkHref = `/courses/${slugify(item.courses.title)}/${slugify(item.textbooks.title)}`;
+
+              // half-star logic like the detail page
+              const avg = Number(item.average_rating) || 0;
+              const roundedHalf = Math.round(avg * 2) / 2;
+
               return (
                 <a
                   key={`${item.id}-${i}`}
@@ -117,10 +123,24 @@ export default function HomePage() {
                     <p className="text-sm text-gray-500">
                       <span className="font-medium">Course Code:</span> {item.courses.code}
                     </p>
-                    <div className="flex justify-center items-center text-yellow-500 text-sm">
-                      {Array.from({ length: 5 }).map((_, j) => (
-                        <span key={j}>{j < Math.round(item.average_rating) ? '★' : '☆'}</span>
-                      ))}
+                    <div className="flex justify-center items-center text-sm">
+                      {Array.from({ length: 5 }).map((_, j) => {
+                        const full = j + 1 <= roundedHalf;
+                        const half = j + 0.5 === roundedHalf;
+                        return (
+                          <FaStar
+                            key={j}
+                            size={14}
+                            className={
+                              full
+                                ? 'text-yellow-500'
+                                : half
+                                ? 'text-yellow-500 opacity-50'
+                                : 'text-gray-300'
+                            }
+                          />
+                        );
+                      })}
                     </div>
                     <p className="text-xs text-gray-400">
                       {item.review_count} review{item.review_count !== 1 && 's'}
