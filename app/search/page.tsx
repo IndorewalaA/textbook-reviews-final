@@ -1,4 +1,3 @@
-// app/search/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
 import { slugify } from '@/utils/slugify';
+import { FaStar } from 'react-icons/fa';
 
 type SearchRow = {
   course_textbook_id: string;
@@ -79,6 +79,9 @@ export default function SearchPage() {
               const bookSlug = slugify(r.textbook_title);
               const href = `/courses/${courseSlug}/${bookSlug}`;
 
+              const avg = Number(r.average_rating) || 0;
+              const roundedHalf = Math.round(avg * 2) / 2;
+
               return (
                 <Link
                   key={r.course_textbook_id}
@@ -114,13 +117,27 @@ export default function SearchPage() {
                         <span className="font-medium">{r.course_code}</span> &middot; {r.course_title}
                       </div>
 
-                      <div className="mt-2 text-sm text-yellow-600">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <span key={i}>{i < Math.round(r.average_rating) ? '★' : '☆'}</span>
-                        ))}
+                      {/* Half-star logic */}
+                      <div className="mt-2 text-sm flex items-center">
+                        {Array.from({ length: 5 }).map((_, i) => {
+                          const full = i + 1 <= roundedHalf;
+                          const half = i + 0.5 === roundedHalf;
+                          return (
+                            <FaStar
+                              key={i}
+                              size={14}
+                              className={
+                                full
+                                  ? 'text-yellow-500'
+                                  : half
+                                  ? 'text-yellow-500 opacity-50'
+                                  : 'text-gray-300'
+                              }
+                            />
+                          );
+                        })}
                         <span className="ml-2 text-gray-700">
-                          {r.average_rating.toFixed(1)}/5 · {r.review_count} review
-                          {r.review_count !== 1 && 's'}
+                          {avg.toFixed(1)}/5 · {r.review_count} review{r.review_count !== 1 && 's'}
                         </span>
                       </div>
                     </div>
