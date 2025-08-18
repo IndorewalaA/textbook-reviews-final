@@ -7,20 +7,35 @@ export const revalidate = 60;
 
 export default async function TextbookPage({
   params,
+  searchParams,
 }: {
   params: { courseTitle: string; bookTitle: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
   const supabase = await createClient();
 
   const { data: authData } = await supabase.auth.getUser();
   const currentUserId = authData?.user?.id ?? null;
-
-  const { data: rows, error: detailsError } = await supabase
+  let { data: rows, error: detailsError } = await supabase
     .from('course_textbook_details')
     .select('*')
     .eq('course_slug', params.courseTitle)
     .eq('textbook_slug', params.bookTitle)
     .limit(1);
+
+  if ((!rows || rows.length === 0) && searchParams?.ctid && typeof searchParams.ctid === 'string') {
+    const { data: byId, error: byIdErr } = await supabase
+      .from('course_textbook_details')
+      .select('*')
+      .eq('course_textbook_id', searchParams.ctid)
+      .limit(1);
+
+    if (byIdErr) {
+      return notFound();
+    }
+    rows = byId ?? [];
+    detailsError = null;
+  }
 
   if (detailsError || !rows || rows.length === 0) return notFound();
   const r = rows[0] as any;
@@ -114,10 +129,8 @@ export default async function TextbookPage({
           </span>
         </div>
         {/* Text */}
-        {review.text && (
-          <p className="text-gray-700 leading-relaxed mb-4">{review.text}</p>
-        )}
-        {/*Voting*/}
+        {review.text && <p className="text-gray-700 leading-relaxed mb-4">{review.text}</p>}
+        {/* Voting */}
         <div className="flex items-center gap-6 text-sm text-gray-600">
           <button className="flex items-center gap-2 hover:text-green-600 transition">
             <FaThumbsUp size={14} />
@@ -135,7 +148,6 @@ export default async function TextbookPage({
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
-        {/* Back link */}
         <Link
           href={`/courses/${r.course_slug}`}
           className="text-lg text-blue-600 hover:underline"
@@ -204,16 +216,17 @@ export default async function TextbookPage({
             </div>
           )}
         </div>
+
         {yourReview && (
           <section className="bg-white shadow-md rounded-lg p-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">Your Review</h2>
             <ReviewCard review={yourReview} forceOwner />
           </section>
         )}
-        {/* Student Reviews*/}
+
+        {/* Student Reviews */}
         <section className="bg-white shadow-md rounded-lg p-6">
           <h2 className="text-2xl font-semibold text-gray-800 mb-6">Student Reviews</h2>
-
           {otherReviews.length === 0 ? (
             <p className="text-gray-500 italic">
               {yourReview ? 'No other reviews yet.' : 'No reviews yet. Be the first to leave one!'}

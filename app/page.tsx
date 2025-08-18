@@ -1,39 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import SearchBar from '@/components/SearchBar';
-import { slugify } from '@/utils/slugify';
-import { motion } from 'framer-motion';
 import clsx from 'clsx';
 import { FaStar } from 'react-icons/fa';
+import Link from 'next/link';
 
 type PopularTextbook = {
-  id: string;
+  id: string; // course_textbook_id
   average_rating: number;
   review_count: number;
   textbooks: {
     title: string;
     image_path: string | null;
+    slug: string;
   };
   courses: {
     code: string;
     title: string;
+    slug: string;
   };
 };
 
 export default function HomePage() {
-  const [query, setQuery] = useState('');
-  const [error, setError] = useState('');
   const [popular, setPopular] = useState<PopularTextbook[]>([]);
   const [centerIndex, setCenterIndex] = useState(0);
-  const router = useRouter();
 
   useEffect(() => {
     const fetchPopular = async () => {
       try {
-        const res = await fetch('/api/textbooks/popular');
-        const data = await res.json();
+        const res = await fetch('/api/textbooks/popular', { cache: 'no-store' });
+        const data = (await res.json()) as PopularTextbook[];
         setPopular(data);
       } catch (err) {
         console.error('Failed to fetch popular textbooks:', err);
@@ -42,25 +39,16 @@ export default function HomePage() {
     fetchPopular();
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) {
-      setError('Please enter a search term.');
-      return;
-    }
-    router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-  };
-
   const handlePrev = () => {
-    setCenterIndex((prev) => (prev - 1 + popular.length) % popular.length);
+    setCenterIndex((prev) => (popular.length ? (prev - 1 + popular.length) % popular.length : 0));
   };
 
   const handleNext = () => {
-    setCenterIndex((prev) => (prev + 1) % popular.length);
+    setCenterIndex((prev) => (popular.length ? (prev + 1) % popular.length : 0));
   };
 
   const getItem = (offset: number) =>
-    popular[(centerIndex + offset + popular.length) % popular.length];
+    popular.length ? popular[(centerIndex + offset + popular.length) % popular.length] : undefined;
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
@@ -84,6 +72,7 @@ export default function HomePage() {
           <button
             onClick={handlePrev}
             className="absolute left-0 z-10 bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-700 transition"
+            aria-label="Previous"
           >
             {'<'}
           </button>
@@ -92,14 +81,13 @@ export default function HomePage() {
             {[getItem(-1), getItem(0), getItem(1)].map((item, i) => {
               if (!item) return null;
               const isCenter = i === 1;
-              const linkHref = `/courses/${slugify(item.courses.title)}/${slugify(item.textbooks.title)}`;
+              const linkHref = `/courses/${item.courses.slug}/${item.textbooks.slug}?ctid=${item.id}`;
 
-              // half-star logic like the detail page
               const avg = Number(item.average_rating) || 0;
               const roundedHalf = Math.round(avg * 2) / 2;
 
               return (
-                <a
+                <Link
                   key={`${item.id}-${i}`}
                   href={linkHref}
                   className={clsx(
@@ -116,6 +104,7 @@ export default function HomePage() {
                       />
                     )}
                   </div>
+
                   <div className="flex flex-col justify-start h-full space-y-1">
                     <h3 className="text-base font-semibold text-gray-900 break-words line-clamp-2">
                       {item.textbooks.title}
@@ -123,6 +112,7 @@ export default function HomePage() {
                     <p className="text-sm text-gray-500">
                       <span className="font-medium">Course Code:</span> {item.courses.code}
                     </p>
+
                     <div className="flex justify-center items-center text-sm">
                       {Array.from({ length: 5 }).map((_, j) => {
                         const full = j + 1 <= roundedHalf;
@@ -142,11 +132,12 @@ export default function HomePage() {
                         );
                       })}
                     </div>
+
                     <p className="text-xs text-gray-400">
                       {item.review_count} review{item.review_count !== 1 && 's'}
                     </p>
                   </div>
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -154,6 +145,7 @@ export default function HomePage() {
           <button
             onClick={handleNext}
             className="absolute right-0 z-10 bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-700 transition"
+            aria-label="Next"
           >
             {'>'}
           </button>
