@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
@@ -23,6 +23,15 @@ type SearchRow = {
 };
 
 export default function SearchPage() {
+  // Put the hook user under Suspense
+  return (
+    <Suspense fallback={null}>
+      <SearchContent />
+    </Suspense>
+  );
+}
+
+function SearchContent() {
   const params = useSearchParams();
   const q = (params.get('q') ?? '').trim();
   const [rows, setRows] = useState<SearchRow[] | null>(null);
@@ -38,10 +47,10 @@ export default function SearchPage() {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
         if (!res.ok) throw new Error(`Search failed (${res.status})`);
-        const data = await res.json();
+        const data = (await res.json()) as SearchRow[];
         if (active) setRows(data);
-      } catch (e: any) {
-        if (active) setErr(e.message || 'Failed to fetch search results.');
+      } catch (e) {
+        if (active) setErr(e instanceof Error ? e.message : 'Failed to fetch search results.');
       }
     })();
 
@@ -105,9 +114,7 @@ export default function SearchPage() {
                         <p className="text-sm text-gray-600">by {r.textbook_author}</p>
                       )}
                       {r.textbook_edition && (
-                        <p className="text-xs text-gray-500 italic">
-                          Edition: {r.textbook_edition}
-                        </p>
+                        <p className="text-xs text-gray-500 italic">Edition: {r.textbook_edition}</p>
                       )}
                       {r.textbook_isbn && (
                         <p className="text-xs text-gray-500">ISBN: {r.textbook_isbn}</p>
@@ -117,7 +124,6 @@ export default function SearchPage() {
                         <span className="font-medium">{r.course_code}</span> &middot; {r.course_title}
                       </div>
 
-                      {/* Half-star logic */}
                       <div className="mt-2 text-sm flex items-center">
                         {Array.from({ length: 5 }).map((_, i) => {
                           const full = i + 1 <= roundedHalf;

@@ -4,15 +4,17 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: reviewId } = await params;
+
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth?.user?.id;
   if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
-  const reviewId = params.id;
   const { rating, text, is_anonymous } = await req.json();
+
   const { data: review, error: rErr } = await supabase
     .from('reviews')
     .select('user_id')
@@ -43,23 +45,27 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: reviewId } = await params;
+
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth?.user?.id;
   if (!userId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+
   const { data: review, error: rErr } = await supabase
     .from('reviews')
     .select('user_id')
-    .eq('id', params.id)
+    .eq('id', reviewId)
     .single();
 
   if (rErr || !review) return NextResponse.json({ error: 'Review not found' }, { status: 404 });
   if (review.user_id !== userId)
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { error } = await supabase.from('reviews').delete().eq('id', params.id);
+  const { error } = await supabase.from('reviews').delete().eq('id', reviewId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
   return NextResponse.json({ ok: true });
 }

@@ -18,8 +18,13 @@ async function getCounts(supabase: any, reviewId: string) {
   return { upvotes: upvotes ?? 0, downvotes: downvotes ?? 0 };
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }   // ✅ Next 15 expects a Promise here
+) {
   try {
+    const { id: reviewId } = await params;           // ✅ await params
+
     const supabase = await createClient();
     const { data: auth } = await supabase.auth.getUser();
     const userId = auth?.user?.id;
@@ -27,12 +32,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const reviewId = params.id;
-    const body = await req.json().catch(() => ({} as any));
+    const body = (await req.json().catch(() => ({}))) as { is_upvote?: boolean };
     const is_upvote = body?.is_upvote;
     if (typeof is_upvote !== 'boolean') {
       return NextResponse.json({ error: 'is_upvote must be boolean' }, { status: 400 });
     }
+
     const { data: existing, error: exErr } = await supabase
       .from('review_votes')
       .select('id, is_upvote')
@@ -50,9 +55,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         .insert({ review_id: reviewId, user_id: userId, is_upvote });
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     } else if (existing.is_upvote === is_upvote) {
+      // toggle off
       const { error } = await supabase.from('review_votes').delete().eq('id', existing.id);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     } else {
+      // switch vote
       const { error } = await supabase
         .from('review_votes')
         .update({ is_upvote })
@@ -61,13 +68,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     const { upvotes, downvotes } = await getCounts(supabase, reviewId);
+
     let user_vote: boolean | null;
     if (!existing) user_vote = is_upvote;
     else if (existing.is_upvote === is_upvote) user_vote = null; // toggled off
     else user_vote = is_upvote; // switched
 
     return NextResponse.json({ upvotes, downvotes, user_vote }, { status: 200 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'Unexpected error' }, { status: 500 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Unexpected error';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

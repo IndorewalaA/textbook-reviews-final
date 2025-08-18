@@ -2,13 +2,32 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
+type ReviewUser = { display_name: string | null; avatar_url: string | null };
+
+type ReviewRow = {
+  id: string;
+  user_id: string;
+  rating: number;
+  text: string | null;
+  is_anonymous: boolean;
+  created_at: string;
+  updated_at: string | null;
+  // cover both cases: single object or array
+  users?: ReviewUser | ReviewUser[] | null;
+};
+
+type VoteRow = { review_id: string; is_upvote: boolean; user_id: string };
+
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { ctid: string } }
+  { params }: { params: Promise<{ ctid: string }> }
 ) {
+  const { ctid } = await params;
+
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth?.user?.id ?? null;
+
   const { data: reviews, error } = await supabase
     .from('reviews')
     .select(
@@ -23,20 +42,22 @@ export async function GET(
       users(display_name, avatar_url)
     `
     )
-    .eq('course_textbook_id', params.ctid);
+    .eq('course_textbook_id', ctid)
+    .returns<ReviewRow[]>(); // ✅ tell TS the shape
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // fetch vote counts in one go
-  const ids = reviews?.map((r) => r.id) ?? [];
-  let counts: Record<string, { up: number; down: number }> = {};
-  let myVotes: Record<string, boolean | null> = {};
+  const ids = (reviews ?? []).map((r) => r.id); // ✅ now typed
+
+  const counts: Record<string, { up: number; down: number }> = {};
+  const myVotes: Record<string, boolean | null> = {};
 
   if (ids.length) {
     const { data: votes } = await supabase
       .from('review_votes')
       .select('review_id, is_upvote, user_id')
-      .in('review_id', ids);
+      .in('review_id', ids)
+      .returns<VoteRow[]>();
 
     for (const id of ids) counts[id] = { up: 0, down: 0 };
 
@@ -46,7 +67,8 @@ export async function GET(
       if (userId && v.user_id === userId) myVotes[v.review_id] = v.is_upvote;
     });
   }
-  const enriched = (reviews ?? []).map((r: any) => {
+
+  const enriched = (reviews ?? []).map((r) => {
     const c = counts[r.id] ?? { up: 0, down: 0 };
     const score = c.up - c.down;
     return {
@@ -64,8 +86,5 @@ export async function GET(
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
-  return NextResponse.json({
-    reviews: enriched,
-    currentUserId: userId,
-  });
+  return NextResponse.json({ reviews: enriched, currentUserId: userId });
 }
