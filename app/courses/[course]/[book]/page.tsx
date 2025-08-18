@@ -6,13 +6,19 @@ import { FaStar } from 'react-icons/fa';
 
 export const revalidate = 60;
 
+type SP = { [key: string]: string | string[] | undefined };
+
 export default async function TextbookPage({
   params,
   searchParams,
 }: {
-  params: { courseTitle: string; bookTitle: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
+  // Next 15 passes these as Promises
+  params: Promise<{ course: string; book: string }>;
+  searchParams: Promise<SP>;
 }) {
+  const { course, book } = await params;
+  const sp = await searchParams;
+
   const supabase = await createClient();
 
   const { data: authData } = await supabase.auth.getUser();
@@ -21,15 +27,15 @@ export default async function TextbookPage({
   let { data: rows, error: detailsError } = await supabase
     .from('course_textbook_details')
     .select('*')
-    .eq('course_slug', params.courseTitle)
-    .eq('textbook_slug', params.bookTitle)
+    .eq('course_slug', course)
+    .eq('textbook_slug', book)
     .limit(1);
 
-  if ((!rows || rows.length === 0) && searchParams?.ctid && typeof searchParams.ctid === 'string') {
+  if ((!rows || rows.length === 0) && typeof sp?.ctid === 'string') {
     const { data: byId, error: byIdErr } = await supabase
       .from('course_textbook_details')
       .select('*')
-      .eq('course_textbook_id', searchParams.ctid)
+      .eq('course_textbook_id', sp.ctid)
       .limit(1);
 
     if (byIdErr) return notFound();
@@ -39,6 +45,7 @@ export default async function TextbookPage({
 
   if (detailsError || !rows || rows.length === 0) return notFound();
   const r = rows[0] as any;
+
   const { data: ratingsRaw } = await supabase
     .from('reviews')
     .select('id, rating')
@@ -54,7 +61,6 @@ export default async function TextbookPage({
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
-        {/* Back link */}
         <Link
           href={`/courses/${r.course_slug}`}
           className="text-lg text-blue-600 hover:underline"
@@ -62,7 +68,6 @@ export default async function TextbookPage({
           ← Back to {r.course_code}
         </Link>
 
-        {/* Textbook Header */}
         <section className="bg-white shadow-md rounded-lg p-6">
           <div className="flex items-start gap-6">
             {r.textbook_image_path && (
@@ -97,22 +102,15 @@ export default async function TextbookPage({
           </div>
         </section>
 
-        {/* Overall Rating */}
         <div className="mb-8">
           {ratings.length > 0 ? (
             <div className="flex items-center gap-4">
               <div className="text-2xl font-bold text-gray-800">Overall Rating:</div>
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => {
-                  if (i + 1 <= roundedHalf) {
-                    return <FaStar key={i} size={24} className="text-yellow-500" />;
-                  } else if (i + 0.5 === roundedHalf) {
-                    return (
-                      <FaStar key={i} size={24} className="text-yellow-500 opacity-50" />
-                    );
-                  } else {
-                    return <FaStar key={i} size={24} className="text-gray-300" />;
-                  }
+                  if (i + 1 <= roundedHalf) return <FaStar key={i} size={24} className="text-yellow-500" />;
+                  if (i + 0.5 === roundedHalf) return <FaStar key={i} size={24} className="text-yellow-500 opacity-50" />;
+                  return <FaStar key={i} size={24} className="text-gray-300" />;
                 })}
                 <span className="ml-2 text-xl font-semibold text-gray-700">
                   {avg.toFixed(1)}/5
@@ -125,6 +123,7 @@ export default async function TextbookPage({
             </div>
           )}
         </div>
+
         <ReviewsSection
           courseTextbookId={r.course_textbook_id}
           currentUserId={currentUserId}
