@@ -20,15 +20,18 @@ type Row = {
 export default async function CoursePage({
   params,
 }: {
-  params: { courseTitle: string };
+  // ✅ Next 15 passes params as a Promise, and your folder is [course]
+  params: Promise<{ course: string }>;
 }) {
+  const { course } = await params; // ✅ was courseTitle
+
   const supabase = await createClient();
 
-  // First: get the course itself (so we know it exists)
+  // First: make sure the course exists
   const { data: courseRow, error: courseErr } = await supabase
     .from('courses')
     .select('id, code, title, slug')
-    .eq('slug', params.courseTitle)
+    .eq('slug', course) // ✅ was params.courseTitle
     .single();
 
   if (courseErr || !courseRow) return notFound();
@@ -46,7 +49,6 @@ export default async function CoursePage({
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
-      {/* Hero */}
       <section className="bg-slate-900 text-white py-24 px-6 text-center shadow-md">
         <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
           {courseRow.code} – {courseRow.title}
@@ -59,10 +61,7 @@ export default async function CoursePage({
       <SearchBar />
 
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pb-24">
-        <Link
-          href="/courses"
-          className="text-blue-600 hover:underline mb-8 inline-block text-lg font-medium"
-        >
+        <Link href="/courses" className="text-blue-600 hover:underline mb-8 inline-block text-lg font-medium">
           ← Back to Courses
         </Link>
 
@@ -85,18 +84,9 @@ export default async function CoursePage({
                     className="h-48 w-32 object-contain rounded-md shadow-sm mx-auto mb-4"
                   />
                 )}
-
-                <h3 className="text-lg font-semibold text-slate-800">
-                  {book.textbook_title}
-                </h3>
-                {book.textbook_author && (
-                  <p className="text-sm text-gray-600 mt-1">{book.textbook_author}</p>
-                )}
-                {book.textbook_edition && (
-                  <p className="text-xs text-gray-500 mt-1 italic">
-                    Edition: {book.textbook_edition}
-                  </p>
-                )}
+                <h3 className="text-lg font-semibold text-slate-800">{book.textbook_title}</h3>
+                {book.textbook_author && <p className="text-sm text-gray-600 mt-1">{book.textbook_author}</p>}
+                {book.textbook_edition && <p className="text-xs text-gray-500 mt-1 italic">Edition: {book.textbook_edition}</p>}
               </Link>
             ))}
           </div>

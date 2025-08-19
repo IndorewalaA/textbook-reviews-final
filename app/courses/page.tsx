@@ -1,14 +1,13 @@
 import { createClient } from '@/utils/supabase/server';
 import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
-import { slugify } from '@/utils/slugify';
 
 export default async function CoursesPage() {
   const supabase = await createClient();
 
   const { data: courseList, error: courseGetError } = await supabase
     .from('courses')
-    .select('id, code, title');
+    .select('id, code, title, slug'); // ✅ include slug
 
   const { data: courseTextbooks, error: textbooksError } = await supabase
     .from('course_textbooks')
@@ -31,7 +30,6 @@ export default async function CoursesPage() {
     .sort((a, b) => {
       const aMatch = a.code.match(/^([A-Z]+)(\d+)/i);
       const bMatch = b.code.match(/^([A-Z]+)(\d+)/i);
-
       if (!aMatch || !bMatch) return a.code.localeCompare(b.code);
 
       const [, aPrefix, aNum] = aMatch;
@@ -46,7 +44,6 @@ export default async function CoursesPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-800">
-      {/* Hero */}
       <section className="bg-slate-900 text-white py-20 px-4 text-center">
         <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Courses at UF</h1>
         <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
@@ -65,7 +62,7 @@ export default async function CoursesPage() {
           {courses.map((course) => (
             <Link
               key={course.id}
-              href={`/courses/${slugify(course.title)}`}
+              href={`/courses/${course.slug}`} // ✅ use DB slug
               className="block bg-white p-6 rounded-xl border border-gray-200 shadow hover:shadow-lg transition text-slate-900 hover:cursor-pointer hover:ring-2 hover:ring-slate-500"
             >
               <div className="flex flex-col gap-2">
