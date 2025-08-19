@@ -20,23 +20,18 @@ type Row = {
 export default async function CoursePage({
   params,
 }: {
-  // ✅ Next 15 passes params as a Promise, and your folder is [course]
   params: Promise<{ course: string }>;
 }) {
-  const { course } = await params; // ✅ was courseTitle
+  const { course } = await params;
 
   const supabase = await createClient();
-
-  // First: make sure the course exists
   const { data: courseRow, error: courseErr } = await supabase
     .from('courses')
     .select('id, code, title, slug')
-    .eq('slug', course) // ✅ was params.courseTitle
+    .eq('slug', course)
     .single();
 
   if (courseErr || !courseRow) return notFound();
-
-  // Then: fetch textbooks for that course
   const { data: textbooks, error: textErr } = await supabase
     .from('course_textbook_details')
     .select(

@@ -7,7 +7,7 @@ export default async function CoursesPage() {
 
   const { data: courseList, error: courseGetError } = await supabase
     .from('courses')
-    .select('id, code, title, slug'); // ✅ include slug
+    .select('id, code, title, slug');
 
   const { data: courseTextbooks, error: textbooksError } = await supabase
     .from('course_textbooks')
@@ -62,7 +62,7 @@ export default async function CoursesPage() {
           {courses.map((course) => (
             <Link
               key={course.id}
-              href={`/courses/${course.slug}`} // ✅ use DB slug
+              href={`/courses/${course.slug}`}
               className="block bg-white p-6 rounded-xl border border-gray-200 shadow hover:shadow-lg transition text-slate-900 hover:cursor-pointer hover:ring-2 hover:ring-slate-500"
             >
               <div className="flex flex-col gap-2">
